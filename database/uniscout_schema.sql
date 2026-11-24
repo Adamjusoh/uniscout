@@ -125,7 +125,8 @@ CREATE TABLE EVENT (
     eligibility_criteria VARCHAR(255) NULL,
     event_status CHAR(1) NOT NULL DEFAULT 'D',
     review_remarks VARCHAR(255) NULL,
-    CONSTRAINT pk_event PRIMARY KEY (event_id),
+    CONSTRAINT pk_event PRIMARY KEY (event_id, organizer_id, category_id, start_datetime),
+    CONSTRAINT uq_event_id UNIQUE (event_id),
     CONSTRAINT fk_event_organizer FOREIGN KEY (organizer_id)
         REFERENCES ORGANIZER (organizer_id)
         ON DELETE RESTRICT
@@ -151,8 +152,8 @@ CREATE TABLE REGISTRATION (
     event_id VARCHAR(20) NOT NULL,
     reg_datetime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     reg_status CHAR(1) NOT NULL DEFAULT 'R',
-    CONSTRAINT pk_registration PRIMARY KEY (registration_id),
-    CONSTRAINT uq_participant_event_reg UNIQUE (participant_id, event_id),
+    CONSTRAINT pk_registration PRIMARY KEY (participant_id, event_id),
+    CONSTRAINT uq_registration_id UNIQUE (registration_id),
     CONSTRAINT fk_reg_participant FOREIGN KEY (participant_id)
         REFERENCES PARTICIPANT (participant_id)
         ON DELETE CASCADE
@@ -173,8 +174,8 @@ CREATE TABLE BOOKMARK (
     participant_id VARCHAR(20) NOT NULL,
     event_id VARCHAR(20) NOT NULL,
     saved_datetime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT pk_bookmark PRIMARY KEY (bookmark_id),
-    CONSTRAINT uq_participant_event_bookmark UNIQUE (participant_id, event_id),
+    CONSTRAINT pk_bookmark PRIMARY KEY (participant_id, event_id),
+    CONSTRAINT uq_bookmark_id UNIQUE (bookmark_id),
     CONSTRAINT fk_bookmark_participant FOREIGN KEY (participant_id)
         REFERENCES PARTICIPANT (participant_id)
         ON DELETE CASCADE
@@ -194,8 +195,8 @@ CREATE TABLE INTEREST (
     participant_id VARCHAR(20) NOT NULL,
     category_id VARCHAR(20) NOT NULL,
     interest_tag VARCHAR(50) NOT NULL,
-    CONSTRAINT pk_interest PRIMARY KEY (interest_id),
-    CONSTRAINT uq_participant_interest_tag UNIQUE (participant_id, category_id, interest_tag),
+    CONSTRAINT pk_interest PRIMARY KEY (participant_id, category_id, interest_tag),
+    CONSTRAINT uq_interest_id UNIQUE (interest_id),
     CONSTRAINT fk_interest_participant FOREIGN KEY (participant_id)
         REFERENCES PARTICIPANT (participant_id)
         ON DELETE CASCADE
@@ -215,8 +216,8 @@ CREATE TABLE SKILL (
     participant_id VARCHAR(20) NOT NULL,
     skill_name VARCHAR(50) NOT NULL,
     proficiency_level VARCHAR(20) NOT NULL DEFAULT 'Beginner',
-    CONSTRAINT pk_skill PRIMARY KEY (skill_id),
-    CONSTRAINT uq_participant_skill UNIQUE (participant_id, skill_name),
+    CONSTRAINT pk_skill PRIMARY KEY (participant_id, skill_name),
+    CONSTRAINT uq_skill_id UNIQUE (skill_id),
     CONSTRAINT fk_skill_participant FOREIGN KEY (participant_id)
         REFERENCES PARTICIPANT (participant_id)
         ON DELETE CASCADE
