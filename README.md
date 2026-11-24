@@ -3,22 +3,48 @@
 [![Course](https://img.shields.io/badge/Course-CSD34103%20Software%20Development%20Workshop-blue.svg)](https://www.unisza.edu.my)
 [![Institution](https://img.shields.io/badge/Institution-UniSZA%20FIK-purple.svg)](https://www.unisza.edu.my)
 [![Team](https://img.shields.io/badge/Team-Group%20Sentry-orange.svg)](#-team--contributors-group-sentry)
+[![Frontend](https://img.shields.io/badge/Frontend-Flutter%20(Material%203)-02569B?logo=flutter&logoColor=white)](uniscout_app/)
+[![Backend](https://img.shields.io/badge/Backend-PHP%20REST%20API-777BB4?logo=php&logoColor=white)](database/api.php)
 [![Database](https://img.shields.io/badge/Database-MySQL%208.0-00758F?logo=mysql&logoColor=white)](database/README.md)
-[![Status](https://img.shields.io/badge/Status-In%20Active%20Development-green.svg)](#)
 
-> **UniScout** is a centralized campus event and co-curricular opportunity ecosystem designed for **Universiti Sultan Zainal Abidin (UniSZA)**. It streamlines student participation, provides verified university organizers with powerful management and analytics tools, and bridges campus clubs, student associations, and faculties.
+> **UniScout** is a centralized campus event and co-curricular opportunity ecosystem designed for **Universiti Sultan Zainal Abidin (UniSZA)**. It connects students, verified campus organizers, and university administrators through a Flutter mobile/desktop application backed by a PHP REST API and a normalized MySQL 8.0 database.
 
 ---
 
 ## 📌 Project Overview
 
-Traditional campus event dissemination relies on fragmented messaging channels, leading to missed application deadlines, low turnouts, and administrative overhead. **UniScout** solves this through a unified digital platform featuring:
+Traditional campus event dissemination often relies on fragmented messaging channels, resulting in missed deadlines, low student turnout, and manual administrative overhead. **UniScout** addresses this with a unified, role-based platform:
 
-- **Centralized Event Discovery**: Filter opportunities by faculty, category, event mode (Physical, Online, Hybrid), and eligibility.
-- **Student Profile & Competency Matching**: Match students to campus events and leadership roles based on interests and verified skill sets.
-- **Automated Registration Workflows**: Instant registration with structured reference codes, capacity management, and deadline enforcement.
-- **Organizer Verification & Oversight**: Controlled authorization tiers for campus clubs, student representatives, and university bodies.
-- **Real-Time Notification System**: Targeted announcements for status changes, event reminders, and registration approvals.
+### Core Capabilities by Role
+- **Participants (Students)**
+  - Account sign-up/sign-in and profile management (faculty, program, academic year, contact info).
+  - Personalized **Interests** and **Skills** tagging for event & opportunity matching.
+  - **Event Discovery & Filtering** by category, mode (`Physical`, `Online`, `Hybrid`), and eligibility.
+  - **One-Tap Registration** with structured reference IDs, capacity tracking, and admission passes.
+  - **Bookmarks & Notifications** for saved opportunities, reminders, and status updates.
+- **Organizers (Clubs & Campus Bodies)**
+  - Create, edit, and manage campus events (`Draft`, `Pending`, `Approved`, `Cancelled`).
+  - Track event capacity, participant registrations, and review feedback from admins.
+- **Administrators**
+  - Review, approve, or reject submitted campus events with review remarks.
+  - Manage user accounts, roles (`participant`, `organizer`, `admin`), and account statuses.
+  - Verify and oversee campus organizations (`Pending`, `Approved`, `Suspended`, `Rejected`).
+  - Monitor platform-wide turnout and activity analytics.
+
+---
+
+## 🏗️ System Architecture
+
+```text
+┌───────────────────────────┐      HTTP / JSON       ┌──────────────────────────┐       PDO / SQL        ┌─────────────────────────┐
+│   UniScout Flutter App    │ ─────────────────────► │   PHP REST API Bridge    │ ─────────────────────► │   MySQL 8.0 Database    │
+│  (uniscout_app/ - Dart)   │ ◄───────────────────── │   (database/api.php)     │ ◄───────────────────── │     (uniscout_db)       │
+└───────────────────────────┘   localhost / 10.0.2.2 └──────────────────────────┘    127.0.0.1:3306      └─────────────────────────┘
+```
+
+- **Frontend (`uniscout_app/`)**: Cross-platform Flutter application (Material 3) organized into role-specific screens (`auth_screen.dart`, `participant_screens.dart`, `organizer_screens.dart`, `admin_screens.dart`), shared UI components (`widgets/shared_widgets.dart`), and a centralized HTTP client (`services/api_service.dart`).
+- **Backend (`database/api.php`)**: Lightweight PHP REST API bridge supporting full CRUD operations, database health/connection configuration via HTTP headers or environment variables, and automatic domain-prefixed ID generation.
+- **Database (`database/`)**: MySQL 8.0 relational database (`uniscout_db`) with 11 tables, foreign-key constraints, check constraints, and performance indexes.
 
 ---
 
@@ -26,27 +52,54 @@ Traditional campus event dissemination relies on fragmented messaging channels, 
 
 ```text
 Software-Development-Workshop/
-├── .gitignore                               # Standardized OS, environment, and editor ignores
-├── README.md                                # Root project documentation and setup guide
+├── README.md                                  # Root project documentation and setup guide
+├── CRUD_PRESENTATION_GUIDE.md                 # Master CRUD matrix & module breakdown across all 11 tables
+├── start_backend.sh                           # Helper script to launch the PHP REST API on port 8080
 │
-├── Software-Requirement-Specification/      # SRS Documentation
-│   └── UniScout_SRS_Final.pdf               # Final IEEE-compliant SRS specification
+├── Software-Requirement-Specification/        # IEEE-aligned SRS Documentation
+│   └── UniScout_SRS_Final.pdf                 # Final Software Requirements Specification
 │
-├── Software-Design-Description/             # SDD Documentation & Guidelines
-│   ├── Guideline SDD v1.2.pdf               # Faculty SDD writing guidelines
-│   └── Software Design Description (...).pdf# Reference model & format sample
+├── Software-Design-Description/               # SDD Documentation, Diagrams & Reports
+│   ├── SDD.pdf                                # Final Software Design Description
+│   ├── Guideline SDD v1.2.pdf                 # Faculty SDD writing guidelines
+│   ├── UniScout_Chapter_4_Database_Design.pdf # Database design chapter extract
+│   ├── UniScout_CRUD_Functions_Presentation.pdf # CRUD functions presentation deck
+│   ├── UniScout_SDD_Validation_and_Fixes_Report.pdf # SDD validation & fixes report
+│   └── figures/                               # Process decomposition & notification flowcharts
 │
-└── database/                                # Relational Database Layer
-    ├── README.md                            # Complete schema breakdown & MySQL Workbench guide
-    ├── uniscout_schema.sql                  # Production DDL script (11 entities, indexes, constraints)
-    └── uniscout_seed.sql                    # Realistic sample fixtures (UniSZA faculties, test data)
+├── database/                                  # Relational Database & REST API Layer
+│   ├── README.md                              # Schema breakdown, PK matrix & MySQL Workbench guide
+│   ├── api.php                                # PHP REST API bridge for uniscout_db
+│   ├── uniscout_schema.sql                    # DDL script (11 tables, constraints, indexes)
+│   ├── uniscout_seed.sql                      # Sample fixtures (UniSZA faculties, users, events)
+│   ├── UniScout.mwb                           # MySQL Workbench EER model file
+│   ├── ERD Diagram.pdf                        # Entity-Relationship Diagram
+│   ├── UML Diagram.pdf                        # UML Class / Database Diagram
+│   └── UniScout_Chapter_4_Database_Design.pdf # Chapter 4 database design documentation
+│
+└── uniscout_app/                              # Flutter Application
+    ├── pubspec.yaml                           # Dart/Flutter dependencies (flutter, http, cupertino_icons)
+    ├── lib/
+    │   ├── main.dart                          # App entrypoint & role-based navigation shell
+    │   ├── screens/
+    │   │   ├── auth_screen.dart               # Sign-in, registration & DB settings UI
+    │   │   ├── participant_screens.dart       # Discovery, registrations, bookmarks, profile & alerts
+    │   │   ├── organizer_screens.dart         # Event creation, editing & organizer dashboard
+    │   │   └── admin_screens.dart             # Event approvals, user/org management & analytics
+    │   ├── services/
+    │   │   └── api_service.dart               # REST client & state controller (UniScoutController)
+    │   └── widgets/
+    │       └── shared_widgets.dart            # Reusable Material 3 cards, theme colors & badges
+    ├── test/
+    │   └── widget_test.dart                   # Flutter widget tests
+    └── android/ ios/ macos/ web/ linux/ windows/ # Platform runners
 ```
 
 ---
 
-## 🗄️ Relational Database Architecture
+## 🗄️ Relational Database Schema
 
-The relational persistence layer is designed with **domain-prefixed surrogate keys** (e.g. `ACC-1001`, `EVT-2026-001`) to protect against Insecure Direct Object References (IDOR) and ensure auditability across logs, QR registration slips, and reports.
+The persistence layer uses **domain-prefixed surrogate keys** (e.g., `ACC-1001`, `PRT-1001`, `EVT-2026-001`, `REG-2026-0001`) to prevent Insecure Direct Object Reference (IDOR) enumeration and improve auditability across logs and registration slips.
 
 ```mermaid
 erDiagram
@@ -66,67 +119,83 @@ erDiagram
     EVENT ||--o{ NOTIFICATION : "triggers (1:M)"
 ```
 
-For full entity dictionary, primary key matrix, and step-by-step MySQL Workbench EER diagram generation, refer to the [Database Setup Guide](database/README.md).
+For the full entity dictionary, primary key matrix, and MySQL Workbench reverse-engineering steps, see [`database/README.md`](database/README.md) and [`CRUD_PRESENTATION_GUIDE.md`](CRUD_PRESENTATION_GUIDE.md).
 
 ---
 
-## 🚀 Quick Start: Database Setup
+## 🚀 Getting Started
 
 ### Prerequisites
-- **MySQL Server 8.0+** or **MariaDB 10.4+**
-- **MySQL Workbench** or command line client
+- **MySQL Server 8.0+** (or MariaDB 10.4+) & **MySQL Workbench**
+- **PHP 8.0+** with `pdo_mysql` extension enabled
+- **Flutter SDK** (Dart SDK `^3.11.1`)
 
-### 1. Initialize Schema & Test Data via Terminal
+### 1. Initialize the Database
 ```bash
-# Navigate to database directory
 cd database
 
-# Run schema creation (creates `uniscout_db` and all 11 tables)
+# Create `uniscout_db` and all 11 tables
 mysql -u root -p < uniscout_schema.sql
 
-# Seed initial test data (categories, organizations, users, events)
+# Load sample UniSZA faculties, accounts, categories, and events
 mysql -u root -p uniscout_db < uniscout_seed.sql
 ```
+*(Alternatively, open and execute [`database/uniscout_schema.sql`](database/uniscout_schema.sql) and [`database/uniscout_seed.sql`](database/uniscout_seed.sql) directly inside MySQL Workbench.)*
 
-### 2. Or Execute via MySQL Workbench
-1. Open MySQL Workbench and connect to your local MySQL connection.
-2. Go to **File** ➔ **Open SQL Script...** and run [`database/uniscout_schema.sql`](database/uniscout_schema.sql).
-3. Open and run [`database/uniscout_seed.sql`](database/uniscout_seed.sql).
-4. Reverse-engineer the visual EER diagram via **Database** ➔ **Reverse Engineer...** (`Cmd+R` / `Ctrl+R`).
+### 2. Start the PHP REST API Server
+From the repository root, run:
+```bash
+chmod +x start_backend.sh
+./start_backend.sh
+```
+This starts the local PHP server at `http://0.0.0.0:8080`:
+- **macOS / Chrome**: `http://127.0.0.1:8080/api.php`
+- **Android Emulator**: `http://10.0.2.2:8080/api.php`
+
+> **Tip:** You can configure your MySQL host, port, username, password, and database name directly inside the app's **DB Settings** dialog without editing source files.
+
+### 3. Run the Flutter Application
+```bash
+cd uniscout_app
+flutter pub get
+flutter run
+```
+
+To run the Flutter widget tests:
+```bash
+cd uniscout_app
+flutter test
+```
 
 ---
 
 ## 👥 Team & Contributors (Group Sentry)
 
-Developed for **CSD34103 Software Development Workshop**, Faculty of Informatics & Computing (FIK), Universiti Sultan Zainal Abidin (UniSZA).
+Developed for **CSD34103 Software Development Workshop** — Bachelor of Computer Science (Software Development) with Honours (Semester 5), Faculty of Informatics & Computing (FIK), Universiti Sultan Zainal Abidin (UniSZA).
 
-| Role / Responsibility | Name | Matric / Contact |
-| :--- | :--- | :--- |
-| **Project Lead / Full-Stack** | Adam Hariz | adamhariz325@gmail.com |
-| **Team Member** | Group Sentry Member | UniSZA FIK |
-| **Team Member** | Group Sentry Member | UniSZA FIK |
-| **Team Member** | Group Sentry Member | UniSZA FIK |
+**Lecturer:** Prof. Madya Ts. Dr. Mohd Khalid Bin Awang
+
+| No. | Name | Matric No. | Assigned Module |
+| :-: | :--- | :---: | :--- |
+| **1** | **Muhammad Adam Haris Bin Jusoh** | `083370` | **Module 1:** Account Registration & Participant Profile, Interests & Skills (Processes 1.0 & 2.0) |
+| **2** | **Ahmad Ilman Wafi Bin Mohd Azami** | `081999` | **Module 2:** Organizer Campus Event Management (Process 3.0) |
+| **3** | **Aniq Danish Ilman Bin Mazlan** | `082284` | **Module 3:** Event Registration, Bookmarks, Recommendations & Notifications (Processes 4.0, 6.0 & 7.0) |
+| **4** | **Muhammad Adam Adli Bin Mohd Nasir** | `081377` | **Module 4:** Admin Event Approval, Users, Organizations & Analytics (Processes 5.0 & 8.0) |
 
 ---
 
-## 🌿 Git Branching & Collaboration Guidelines
+## 🌿 Git Workflow & Conventions
 
-To maintain clean repository history within Group Sentry:
-
-1. **`main`** branch is protected: only tested, reviewed code and finalized documentation should be merged here.
-2. Create dedicated branches for your tasks:
-   - Features: `git checkout -b feat/event-filter`
-   - Database: `git checkout -b db/add-attendance-table`
-   - Documentation: `git checkout -b docs/sdd-section-3`
-   - Bugfixes: `git checkout -b fix/registration-deadline`
-3. Write clean, conventional commit messages:
-   - `feat: implement user registration endpoint`
-   - `fix: resolve foreign key constraint in registration table`
-   - `docs: update SDD class diagram in Chapter 4`
-4. Always pull before pushing: `git pull origin main --rebase`
+1. Keep `main` clean: merge only tested code and finalized documentation.
+2. Use descriptive branch prefixes:
+   - `feat/...` — new application features (e.g. `feat/event-filter`)
+   - `db/...` — schema, seed, or API changes (e.g. `db/add-attendance-table`)
+   - `docs/...` — SRS, SDD, or README updates (e.g. `docs/sdd-section-3`)
+   - `fix/...` — bug fixes (e.g. `fix/registration-deadline`)
+3. Follow conventional commit messages (`feat:`, `fix:`, `docs:`, `refactor:`).
 
 ---
 
 ## 📄 License & Academic Integrity
 
-This project is developed for academic evaluation under **UniSZA CSD34103 Software Development Workshop**. All rights reserved by **Group Sentry** and Universiti Sultan Zainal Abidin.
+This project is developed for academic evaluation under **UniSZA CSD34103 Software Development Workshop**. All rights reserved by **Group Sentry** and **Universiti Sultan Zainal Abidin (UniSZA)**.

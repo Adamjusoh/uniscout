@@ -10,7 +10,7 @@ void main() {
   runApp(const UniScoutApp());
 }
 
-/// Root UniScout Flutter Mobile Application wired to MySQL Workbench (`uniscout_db`).
+/// Root UniScout Flutter Application following the SDD Design Layout.
 class UniScoutApp extends StatefulWidget {
   const UniScoutApp({super.key, this.skipNetworkOnInit = false});
 
@@ -76,6 +76,14 @@ class _MainShellState extends State<_MainShell> {
   int _tabIndex = 0;
   String _lastRole = '';
 
+  void _openNotifications(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => NotificationScreen(controller: widget.controller),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = widget.controller;
@@ -85,31 +93,30 @@ class _MainShellState extends State<_MainShell> {
       _tabIndex = 0;
     }
 
+    // Bottom navigation layout matching SDD p.51, p.66, p.73, p.77, p.80
     final tabs = switch (role) {
-      'organizer' => [
-          ('My Events', Icons.event_note_outlined, OrganizerEventsTab(controller: c)),
-          ('All Events', Icons.explore_outlined, ExploreEventsTab(controller: c)),
-          ('Alerts', Icons.notifications_outlined, NotificationsTab(controller: c)),
-        ],
       'admin' => [
           ('Approvals', Icons.fact_check_outlined, AdminApprovalsTab(controller: c)),
-          ('Manage', Icons.manage_accounts_outlined, AdminManagementTab(controller: c)),
           ('Analytics', Icons.bar_chart_outlined, AdminAnalyticsTab(controller: c)),
-          ('Events', Icons.event_outlined, OrganizerEventsTab(controller: c)),
+          ('Management', Icons.apartment_outlined, AdminManagementTab(controller: c)),
+          ('Profile', Icons.person_outline, RoleProfileTab(controller: c)),
+        ],
+      'organizer' => [
+          ('Explore', Icons.explore_outlined, ExploreEventsTab(controller: c)),
+          ('Events', Icons.calendar_today_outlined, OrganizerEventsTab(controller: c)),
+          ('Map', Icons.location_on_outlined, CampusMapTab(controller: c)),
+          ('Profile', Icons.person_outline, RoleProfileTab(controller: c)),
         ],
       _ => [
           ('Explore', Icons.explore_outlined, ExploreEventsTab(controller: c)),
-          ('Passes', Icons.confirmation_number_outlined, TicketsAndBookmarksTab(controller: c)),
-          (
-            'Alerts',
-            Icons.notifications_outlined,
-            NotificationsTab(controller: c),
-          ),
+          ('Events', Icons.calendar_today_outlined, TicketsAndBookmarksTab(controller: c)),
+          ('Map', Icons.location_on_outlined, CampusMapTab(controller: c)),
           ('Profile', Icons.person_outline, ParticipantProfileTab(controller: c)),
         ],
     };
 
     final safeIdx = _tabIndex.clamp(0, tabs.length - 1);
+    final unread = c.unreadNotificationCount;
 
     return Scaffold(
       appBar: AppBar(
@@ -117,13 +124,13 @@ class _MainShellState extends State<_MainShell> {
         surfaceTintColor: Colors.white,
         title: Row(
           children: [
-            const Text(
-              'UniScout',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 19),
+            Text(
+              role == 'admin' ? 'UniScout Admin' : 'UniScout',
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 19),
             ),
             const SizedBox(width: 8),
             PopupMenuButton<String>(
-              tooltip: 'Switch Demo Role',
+              tooltip: 'Switch Role',
               onSelected: c.switchDemoRole,
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'participant', child: Text('Role: Participant')),
@@ -147,8 +154,11 @@ class _MainShellState extends State<_MainShell> {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const Icon(Icons.arrow_drop_down,
-                        size: 16, color: UniScoutColors.primary),
+                    const Icon(
+                      Icons.arrow_drop_down,
+                      size: 16,
+                      color: UniScoutColors.primary,
+                    ),
                   ],
                 ),
               ),
@@ -156,6 +166,25 @@ class _MainShellState extends State<_MainShell> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Notifications',
+            onPressed: () => _openNotifications(context),
+            icon: Badge(
+              isLabelVisible: unread > 0,
+              label: Text('$unread'),
+              child: const Icon(Icons.notifications_none_rounded),
+            ),
+          ),
+          IconButton(
+            tooltip: 'MySQL Setup',
+            onPressed: () => showDbSettingsDialog(context, c),
+            icon: Icon(
+              c.isConnectedToMySql
+                  ? Icons.storage_rounded
+                  : Icons.settings_outlined,
+              color: c.isConnectedToMySql ? UniScoutColors.success : null,
+            ),
+          ),
           IconButton(
             tooltip: 'Sync with MySQL Workbench',
             onPressed: c.isLoading ? null : c.refreshFromServer,
@@ -174,26 +203,43 @@ class _MainShellState extends State<_MainShell> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          SqlTraceBanner(controller: c),
-          Expanded(child: tabs[safeIdx].$3),
-        ],
+      body: tabs[safeIdx].$3,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: FloatingActionButton(
+        tooltip: role == 'organizer' ? 'Create Campus Event' : 'Quick Action',
+        backgroundColor: UniScoutColors.primary,
+        foregroundColor: Colors.white,
+        shape: const CircleBorder(),
+        onPressed: () {
+          if (role == 'organizer') {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => CreateEditEventScreen(controller: c),
+              ),
+            );
+          } else if (role == 'admin') {
+            setState(() => _tabIndex = 2);
+          } else {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => RecommendedForYouScreen(controller: c),
+              ),
+            );
+          }
+        },
+        child: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: safeIdx,
         onDestinationSelected: (idx) => setState(() => _tabIndex = idx),
-        destinations: tabs.map((t) {
-          final unread = t.$1 == 'Alerts' ? c.unreadNotificationCount : 0;
-          return NavigationDestination(
-            icon: Badge(
-              isLabelVisible: unread > 0,
-              label: Text('$unread'),
-              child: Icon(t.$2),
-            ),
-            label: t.$1,
-          );
-        }).toList(),
+        destinations: tabs
+            .map(
+              (t) => NavigationDestination(
+                icon: Icon(t.$2),
+                label: t.$1,
+              ),
+            )
+            .toList(),
       ),
     );
   }

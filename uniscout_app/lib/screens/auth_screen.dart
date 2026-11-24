@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/shared_widgets.dart';
 
-/// Process 1.0: Registration & Sign In (`GUI/Sign in.png`, `GUI/Sign up.png`).
+/// SDD Section 3.1 (Page 14): Sign in, Join UniScout (Sign up), and Reset Password.
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key, required this.controller});
 
@@ -12,10 +12,17 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
+enum _AuthView { signIn, signUp, resetPassword }
+
 class _AuthScreenState extends State<AuthScreen> {
-  bool _isSignUp = false;
+  _AuthView _view = _AuthView.signIn;
+  bool _rememberMe = true;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+
   final _emailCtrl = TextEditingController(text: '083370@putra.unisza.edu.my');
   final _passwordCtrl = TextEditingController(text: 'Password@123');
+  final _confirmPasswordCtrl = TextEditingController(text: 'Password@123');
   final _fullNameCtrl = TextEditingController();
   final _matricCtrl = TextEditingController();
 
@@ -23,6 +30,7 @@ class _AuthScreenState extends State<AuthScreen> {
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _confirmPasswordCtrl.dispose();
     _fullNameCtrl.dispose();
     _matricCtrl.dispose();
     super.dispose();
@@ -31,11 +39,16 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _submit() async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      if (_isSignUp) {
+      if (_view == _AuthView.signUp) {
         if (_emailCtrl.text.trim().isEmpty ||
             _fullNameCtrl.text.trim().isEmpty ||
-            _matricCtrl.text.trim().isEmpty) {
-          throw Exception('Please fill in email, full name, and matric no.');
+            _matricCtrl.text.trim().isEmpty ||
+            _passwordCtrl.text.isEmpty ||
+            _confirmPasswordCtrl.text.isEmpty) {
+          throw Exception('Please complete all required fields');
+        }
+        if (_passwordCtrl.text != _confirmPasswordCtrl.text) {
+          throw Exception('Passwords do not match');
         }
         await widget.controller.registerAccount(
           email: _emailCtrl.text.trim(),
@@ -45,12 +58,26 @@ class _AuthScreenState extends State<AuthScreen> {
         );
         messenger.showSnackBar(
           const SnackBar(
-            content: Text('Account created in ACCOUNT & PARTICIPANT tables!'),
+            content: Text('Registration successful'),
             backgroundColor: UniScoutColors.success,
           ),
         );
-      } else {
+      } else if (_view == _AuthView.signIn) {
+        if (_emailCtrl.text.trim().isEmpty || _passwordCtrl.text.isEmpty) {
+          throw Exception('Invalid email or password');
+        }
         await widget.controller.signInWithEmail(_emailCtrl.text);
+      } else if (_view == _AuthView.resetPassword) {
+        if (_emailCtrl.text.trim().isEmpty) {
+          throw Exception('Please enter your UniSZA student email');
+        }
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('If the account exists, reset instructions will be sent'),
+            backgroundColor: UniScoutColors.primary,
+          ),
+        );
+        setState(() => _view = _AuthView.signIn);
       }
     } catch (e) {
       messenger.showSnackBar(
@@ -75,23 +102,29 @@ class _AuthScreenState extends State<AuthScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Chip(
-                    avatar: Icon(
-                      widget.controller.isConnectedToMySql
-                          ? Icons.check_circle
-                          : Icons.offline_bolt,
-                      size: 16,
-                      color: widget.controller.isConnectedToMySql
-                          ? UniScoutColors.success
-                          : UniScoutColors.warning,
+                  if (_view != _AuthView.signIn)
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => setState(() => _view = _AuthView.signIn),
+                    )
+                  else
+                    Chip(
+                      avatar: Icon(
+                        widget.controller.isConnectedToMySql
+                            ? Icons.check_circle
+                            : Icons.offline_bolt,
+                        size: 16,
+                        color: widget.controller.isConnectedToMySql
+                            ? UniScoutColors.success
+                            : UniScoutColors.warning,
+                      ),
+                      label: Text(
+                        widget.controller.isConnectedToMySql
+                            ? 'MySQL Live'
+                            : 'Demo Mode',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                     ),
-                    label: Text(
-                      widget.controller.isConnectedToMySql
-                          ? 'MySQL Live'
-                          : 'Demo Mode',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
                   TextButton.icon(
                     onPressed: () =>
                         showDbSettingsDialog(context, widget.controller),
@@ -100,23 +133,19 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'UniScout',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w800,
-                  color: UniScoutColors.ink,
+              const SizedBox(height: 16),
+              if (_view == _AuthView.signIn) ...[
+                const Text(
+                  'UniScout',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.w800,
+                    color: UniScoutColors.ink,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'UniSZA Campus Event & Opportunity Management',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: UniScoutColors.muted, fontSize: 13),
-              ),
-              const SizedBox(height: 28),
+                const SizedBox(height: 24),
+              ],
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -128,18 +157,32 @@ class _AuthScreenState extends State<AuthScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      _isSignUp ? 'Create Account (Process 1.0)' : 'Sign in',
+                      switch (_view) {
+                        _AuthView.signIn => 'Sign in',
+                        _AuthView.signUp => 'Join UniScout',
+                        _AuthView.resetPassword => 'Reset Password',
+                      },
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                    if (_view == _AuthView.resetPassword) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Enter your UniSZA student email to request a password reset.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: UniScoutColors.muted,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
-                    if (_isSignUp) ...[
+                    if (_view == _AuthView.signUp) ...[
                       TextField(
                         controller: _fullNameCtrl,
                         decoration: const InputDecoration(
-                          labelText: 'Full Name',
+                          labelText: 'Full Name (e.g. Adam Hariz)',
                           prefixIcon: Icon(Icons.person_outline),
                         ),
                       ),
@@ -147,7 +190,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       TextField(
                         controller: _matricCtrl,
                         decoration: const InputDecoration(
-                          labelText: 'Matric No. (e.g. 084500)',
+                          labelText: 'Matric Number (e.g. 083370)',
                           prefixIcon: Icon(Icons.badge_outlined),
                         ),
                       ),
@@ -157,21 +200,78 @@ class _AuthScreenState extends State<AuthScreen> {
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
-                        labelText: 'University Email',
+                        labelText: 'student@putra.unisza.edu.my',
                         prefixIcon: Icon(Icons.mail_outline),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _passwordCtrl,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock_outline),
+                    if (_view != _AuthView.resetPassword) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _passwordCtrl,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: 'Your password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 18),
-                    FilledButton(
+                    ],
+                    if (_view == _AuthView.signUp) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _confirmPasswordCtrl,
+                        obscureText: _obscureConfirm,
+                        decoration: InputDecoration(
+                          labelText: 'Confirm password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirm
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscureConfirm = !_obscureConfirm,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (_view == _AuthView.signIn) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Switch(
+                            value: _rememberMe,
+                            onChanged: (v) => setState(() => _rememberMe = v),
+                          ),
+                          const Text(
+                            'Remember Me',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () =>
+                                setState(() => _view = _AuthView.resetPassword),
+                            child: const Text(
+                              'Forgot Password?',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
                       onPressed: _submit,
                       style: FilledButton.styleFrom(
                         backgroundColor: UniScoutColors.primary,
@@ -180,26 +280,57 @@ class _AuthScreenState extends State<AuthScreen> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: Text(
-                        _isSignUp ? 'CREATE ACCOUNT (INSERT)' : 'SIGN IN',
+                      icon: const Icon(Icons.arrow_forward, size: 18),
+                      label: Text(
+                        switch (_view) {
+                          _AuthView.signIn => 'SIGN IN',
+                          _AuthView.signUp => 'SIGN UP',
+                          _AuthView.resetPassword => 'SEND',
+                        },
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    TextButton(
-                      onPressed: () => setState(() => _isSignUp = !_isSignUp),
-                      child: Text(
-                        _isSignUp
-                            ? 'Already have an account? Sign in'
-                            : "Don't have an account? Sign up",
+                    if (_view != _AuthView.resetPassword) ...[
+                      const SizedBox(height: 14),
+                      const Text(
+                        'OR',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: UniScoutColors.muted,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 10),
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            widget.controller.signInQuick('ACC-1004'),
+                        icon: const Icon(Icons.school_outlined, size: 18),
+                        label: const Text(
+                          'Sign in with UniSZA Student Portal (AIMS SSO)',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: () => setState(
+                          () => _view = _view == _AuthView.signUp
+                              ? _AuthView.signIn
+                              : _AuthView.signUp,
+                        ),
+                        child: Text(
+                          _view == _AuthView.signUp
+                              ? 'Already have an account? Sign in'
+                              : "Don't have an account? Sign up",
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
-                'Quick Demo Login (Switch Actor Role for CRUD Presentation)',
+                'Quick Demo Login',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
@@ -260,4 +391,3 @@ class _QuickRoleChip extends StatelessWidget {
     );
   }
 }
-

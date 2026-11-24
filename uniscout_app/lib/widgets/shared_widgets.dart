@@ -131,61 +131,45 @@ class SqlTraceBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: const BoxDecoration(
         color: Color(0xFF0F172A),
         border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Icon(
-                controller.isConnectedToMySql
-                    ? Icons.storage_rounded
-                    : Icons.developer_mode_rounded,
-                size: 14,
-                color: controller.isConnectedToMySql
-                    ? const Color(0xFF4ADE80)
-                    : const Color(0xFFFBBF24),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  controller.isConnectedToMySql
-                      ? 'MySQL Workbench LIVE (${controller.dbName}) · ${controller.lastSddRef}'
-                      : 'Demo Mode (In-Memory) · ${controller.lastSddRef}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                  minimumSize: const Size(0, 24),
-                ),
-                onPressed: () => showDbSettingsDialog(context, controller),
-                child: const Text(
-                  'MySQL Setup',
-                  style: TextStyle(color: Color(0xFF93C5FD), fontSize: 11),
-                ),
-              ),
-            ],
+          Icon(
+            controller.isConnectedToMySql
+                ? Icons.storage_rounded
+                : Icons.developer_mode_rounded,
+            size: 14,
+            color: controller.isConnectedToMySql
+                ? const Color(0xFF4ADE80)
+                : const Color(0xFFFBBF24),
           ),
-          const SizedBox(height: 2),
-          Text(
-            controller.lastSqlTrace,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontFamily: 'monospace',
-              fontSize: 10.5,
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              controller.isConnectedToMySql
+                  ? 'MySQL Live (${controller.dbName})'
+                  : 'Demo Mode',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+              minimumSize: const Size(0, 24),
+            ),
+            onPressed: () => showDbSettingsDialog(context, controller),
+            child: const Text(
+              'MySQL Setup',
+              style: TextStyle(color: Color(0xFF93C5FD), fontSize: 11),
             ),
           ),
         ],
